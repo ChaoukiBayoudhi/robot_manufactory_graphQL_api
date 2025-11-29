@@ -37,13 +37,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    
+    'corsheaders',  # CORS support for cross-origin requests
     'robot',
     'strawberry.django',
-
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # CORS middleware (should be as high as possible)
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -76,14 +79,22 @@ WSGI_APPLICATION = 'robot_manufactory_graphQL_api.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-
+    # PostgreSQL configuration (for production)
+    # Uncomment and configure when PostgreSQL is properly set up
+    # "default": {
+    #     "ENGINE": "django.db.backends.postgresql",
+    #     "NAME": "robot_db",
+    #     "USER": "bi1_user",
+    #     "PASSWORD": "iqmaqZvKY7QzVbDX+g+1VTY5GJL9bF+9SPWRTu8QqCU=",
+    #     "HOST": "127.0.0.1",  # localhost
+    #     "PORT": "5432",  # postgresql port
+    # },
+    
+    # SQLite configuration (for development/testing)
+    # This doesn't require database server setup
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "robot_db",
-        "USER":"bi1_user",
-        "PASSWORD":"iqmaqZvKY7QzVbDX+g+1VTY5GJL9bF+9SPWRTu8QqCU=",
-        "HOST":"127.0.0.1", #localhost
-        "PORT":"5432", #postgresql port
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     },
 }
 
@@ -129,3 +140,141 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# ============================================================================
+# Logging Configuration
+# ============================================================================
+# Configure Django logging to track application events, errors, and debug info.
+# Logs are written to console (for development) and can be extended to files.
+# For production, consider using rotating file handlers or external logging services.
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    # Formatters define the structure of log messages
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+        'detailed': {
+            'format': '[{asctime}] {levelname} in {module}: {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
+    # Filters can be used to control which log records are processed
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    # Handlers determine where log messages are sent (console, file, email, etc.)
+    'handlers': {
+        # Console handler: outputs logs to the terminal/console
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'detailed',
+        },
+        # File handler: writes logs to a file (uncomment to enable)
+        # 'file': {
+        #     'level': 'DEBUG',
+        #     'class': 'logging.FileHandler',
+        #     'filename': BASE_DIR / 'logs' / 'django.log',
+        #     'formatter': 'verbose',
+        # },
+        # Mail handler: sends error emails to admins (for production)
+        'mail_admins': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler',
+            'formatter': 'verbose',
+        },
+    },
+    # Loggers are the entry points into the logging system
+    'loggers': {
+        # Django framework logger: captures Django-specific logs
+        'django': {
+            'handlers': ['console', 'mail_admins'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # Robot app logger: custom logger for the robot application
+        'robot': {
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
+        # GraphQL logger: captures Strawberry GraphQL operations
+        'strawberry': {
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
+        # Database query logger: logs all SQL queries (useful for debugging)
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'WARNING',
+            'propagate': False,
+        },
+        # Root logger: catches all other log messages
+        '': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+    },
+}
+
+
+# ============================================================================
+# Strawberry GraphQL Configuration
+# ============================================================================
+# Enable schema editing in GraphiQL interface.
+# When True, allows interactive schema exploration and testing in the browser.
+# Set to False in production for security reasons.
+STRAWBERRY_DJANGO_ALLOW_SCHEMA_EDITING = True
+
+
+# ============================================================================
+# CORS (Cross-Origin Resource Sharing) Configuration
+# ============================================================================
+# CORS settings allow the API to be accessed from different origins (domains).
+# This is essential when the frontend runs on a different domain/port than the backend.
+
+# Allow requests from any origin (all domains).
+# WARNING: Set to False in production and specify exact allowed origins.
+# For production, use: CORS_ALLOWED_ORIGINS = ['https://yourdomain.com']
+CORS_ALLOW_ALL_ORIGINS = True
+
+# Allow cookies and authentication headers to be sent with cross-origin requests.
+# Required if you need to send authentication tokens or session cookies.
+CORS_ALLOW_CREDENTIALS = True
+
+# List of HTTP methods allowed for cross-origin requests.
+# These methods can be used when making requests from a different origin.
+CORS_ALLOW_METHODS = [
+    'DELETE',   # Delete resources
+    'GET',      # Retrieve resources
+    'OPTIONS',  # Preflight requests (required for CORS)
+    'PATCH',    # Partial update of resources
+    'POST',     # Create resources or send data
+    'PUT',      # Full update of resources
+]
+
+# Optional: Specify allowed headers (uncomment if needed)
+# CORS_ALLOW_HEADERS = [
+#     'accept',
+#     'accept-encoding',
+#     'authorization',
+#     'content-type',
+#     'dnt',
+#     'origin',
+#     'user-agent',
+#     'x-csrftoken',
+#     'x-requested-with',
+# ]

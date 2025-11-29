@@ -5,11 +5,12 @@ name = "pypi"
 
 [packages]
 django = "*"
-psycopg2 = "*"
-strawberry-graphql = "*"
+psycopg2-binary = "*"
+django-cors-headers = "*"
+strawberry-graphql-django = "*"
+requests = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.14"
-python_full_version = "3.14.0"
+python_version = "3.11"
